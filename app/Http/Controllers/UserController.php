@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -13,39 +14,44 @@ class UserController extends Controller
    }
 
    public function user($id){
-    
-        $user = User::findOrFail($id);
-        if ($user) {
-            return $user;
-        } else {
-            return [
-                "Status" => 404,
-                "Message" => "Usuário informado não existe."
-            ];
+       
+       try {
+
+         return  User::findOrFail($id);
+            
+        } catch (Exception $e) {
+            
+           return $e->getMessage();
         }
-    
-   }
+
+    }
 
    public function update(Request $request,$id){
     $user =  User::findOrFail($id);
      if($user){
         $user->name = $request->name;
         $user->email = $request->email;
-        $user->save();
+         $user->save();
      }else{
         return "Usuário informado não existe";
      }  
 
-     return ["Status"=>202,
-             "Message"=> "Usuário atualizado com sucesso" ];
+     return ["Status"=>200,
+             "Message"=> "Usuario atualizado com sucesso" ];
    }
 
    public function delete($id) {
     $user =  User::findOrFail($id);
-    $user->delete();
-
-    return ["Status"=>202,
+    if($user){
+        $user->delete();
+        return ["Status"=>202,
              "Message"=> "Usuário deletado com sucesso" ];
+    }else{
+        return ["Status"=>404,
+             "Message"=> "Usuário não existe." ];
+    }
+
+    
    }
 
 }
