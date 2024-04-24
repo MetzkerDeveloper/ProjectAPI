@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redis;
 use OpenApi\Annotations as OA;
 
 /**
@@ -44,7 +43,9 @@ class UserController extends Controller
     *         @OA\Schema(type="string"),
     *   ),
     *   @OA\Response(response="200", 
-    *    description="List user by id")
+    *    description="Returns user by id"),
+    *    @OA\Response(response="204", 
+    *    description="User does not exist."),
     * ) 
    */
    public function user(Request $request){
@@ -55,7 +56,10 @@ class UserController extends Controller
                   }
                   return;
             } catch (Exception $e) {
-               return $e->getMessage();
+               $e->__construct("User does not exist", 204);
+               return ["Status"=> $e->getCode(),
+                       "Message"=> $e->getMessage()
+             ];
             }
       }
 
@@ -129,7 +133,7 @@ class UserController extends Controller
     *       ),
     *     ),
     *     @OA\Response(response=200, description="User updated successfully"),
-    *     @OA\Response(response=404, description="User informed does not exist")
+    *     @OA\Response(response=204, description="User informed does not exist")
     *  )
    */
    public function update(Request $request){
@@ -139,16 +143,14 @@ class UserController extends Controller
             $user->name = $request->name;
             $user->email = $request->email;
                $user->save();
-         }else{
-            return ["Status"=>404,
-            "Message"=> "User informed does not exist" ];
-         }  
+         } 
          return ["Status"=>200,
                   "Message"=> "User updated successfully" ];
          } catch (Exception $e) {
-            return $e->getMessage();
+               $e->__construct("User informed does not exist", 204);
+               return ["Status"=>$e->getCode(),
+               "Message"=> $e->getMessage() ];
          }
-
    }
 
    /** Delete documentation
@@ -163,20 +165,27 @@ class UserController extends Controller
     *         description="The id passed to delete data of user in query string.",
     *         @OA\Schema(type="string"),
     *   ),
-    *   @OA\Response(response="202", 
-    *    description="User deleted with success.")
+    *   @OA\Response(response="200", 
+    *    description="User deleted with success."),
+    *    @OA\Response(response="204", 
+    *    description="User does not exist."),
     * ) 
    */
-   public function delete($id){
-      $user =  User::findOrFail($id);
-      if($user){
-         $user->delete();
-         return ["Status"=>202,
-               "Message"=> "Usuário deletado com sucesso" ];
-      }else{
-         return ["Status"=>404,
-               "Message"=> "Usuário não existe." ];
+   public function delete(Request $request){
+      try {
+         $user =  User::findOrFail($request->id);
+         if($user){
+            $user->delete();
+            return ["Status"=>200,
+            "Message"=> "User deleted with success" ];
+         }       
+      }catch (Exception $e) 
+      {
+         $e->__construct("User does not exist", 204);
+        return ["Status"=> $e->getCode(),
+                "Message"=> $e->getMessage()
+      ];
+
       }
    }
-
 }
